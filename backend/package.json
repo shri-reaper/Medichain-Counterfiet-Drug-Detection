@@ -1,20 +1,10 @@
 {
-  "name": "agrichain-backend",
+  "name": "medichain-backend",
   "version": "1.0.0",
-  "description": "Express backend API for AGRICHAIN using Hyperledger Fabric Gateway",
+  "description": "Express API for counterfeit drug detection using Hyperledger Fabric",
   "main": "src/server.js",
-  "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
-  },
-  "keywords": [
-    "hyperledger-fabric",
-    "agrichain",
-    "express",
-    "nodejs",
-    "blockchain"
-  ],
-  "author": "",
+  "scripts": { "start": "node src/server.js", "dev": "node --watch src/server.js" },
+  "keywords": ["hyperledger-fabric", "medicine", "counterfeit-detection", "express", "blockchain"],
   "license": "ISC",
   "dependencies": {
     "@grpc/grpc-js": "^1.14.0",

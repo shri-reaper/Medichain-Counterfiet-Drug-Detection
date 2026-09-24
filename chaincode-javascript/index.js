@@ -1,5 +1,5 @@
 'use strict';
 
-const AssetTransfer = require('./lib/assetTransfer');
+const MedicineTraceability = require('./lib/medicineTraceability');
 
-module.exports.contracts = [AssetTransfer];
+module.exports.contracts = [MedicineTraceability];

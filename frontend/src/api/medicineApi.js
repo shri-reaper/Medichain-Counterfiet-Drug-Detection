@@ -1,0 +1,12 @@
+import axios from 'axios';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const api = axios.create({ baseURL: API_BASE_URL, headers: { 'Content-Type': 'application/json' }, timeout: 15000 });
+export const getErrorMessage = (error) => error.response?.data?.error || (error.request ? `Cannot reach Medichain backend at ${API_BASE_URL}.` : error.message || 'Unexpected error');
+export const checkHealth = async () => (await api.get('/api/health')).data;
+export const getAllMedicines = async () => { const data = (await api.get('/api/medicines')).data; return Array.isArray(data) ? data : []; };
+export const createMedicine = async (medicine) => (await api.post('/api/medicines', medicine)).data;
+export const verifyMedicine = async (id, payload) => (await api.post(`/api/medicines/${encodeURIComponent(id)}/verify`, payload)).data;
+export const transferMedicine = async (id, payload) => (await api.post(`/api/medicines/${encodeURIComponent(id)}/transfer`, payload)).data;
+export const recallMedicine = async (id, payload) => (await api.post(`/api/medicines/${encodeURIComponent(id)}/recall`, payload)).data;
+export const getMedicine = async (id) => (await api.get(`/api/medicines/${encodeURIComponent(id)}`)).data;
+export default api;

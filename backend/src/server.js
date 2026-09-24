@@ -9,7 +9,7 @@ let server = null;
 async function startServer() {
     try {
         console.log('====================================================');
-        console.log('       AGRICHAIN - Hyperledger Fabric Backend       ');
+        console.log('       MEDICHAIN - Hyperledger Fabric Backend       ');
         console.log('====================================================');
 
         // Connect to Hyperledger Fabric Gateway
@@ -19,7 +19,7 @@ async function startServer() {
         server = app.listen(config.port, () => {
             console.log(`Backend server listening on http://localhost:${config.port}`);
             console.log(`Health check: http://localhost:${config.port}/api/health`);
-            console.log(`Batches API:  http://localhost:${config.port}/api/batches`);
+            console.log(`Medicine API: http://localhost:${config.port}/api/medicines`);
             console.log('====================================================');
         });
     } catch (error) {

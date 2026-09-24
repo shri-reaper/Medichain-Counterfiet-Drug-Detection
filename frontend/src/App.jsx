@@ -1,211 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import Navbar from './components/common/Navbar';
-import Sidebar from './components/common/Sidebar';
-import DashboardView from './components/dashboard/DashboardView';
-import BatchList from './components/batches/BatchList';
-import CreateBatchView from './components/create/CreateBatchView';
-import ArchitectureView from './components/architecture/ArchitectureView';
-import BatchDetailModal from './components/batches/BatchDetailModal';
-import UpdateStorageModal from './components/batches/UpdateStorageModal';
-import TransferCustodyModal from './components/batches/TransferCustodyModal';
-import { getAllBatches, checkHealth, getErrorMessage } from './api/batchApi';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, ChevronRight, ClipboardCheck, Factory, FlaskConical, Package, RefreshCw, Search, ShieldAlert, ShieldCheck, Truck, XCircle } from 'lucide-react';
+import { checkHealth, createMedicine, getAllMedicines, getErrorMessage, recallMedicine, transferMedicine, verifyMedicine } from './api/medicineApi';
 
+const roles = ['MANUFACTURER', 'WHOLESALER', 'DISTRIBUTOR', 'PHARMACY', 'HOSPITAL', 'REGULATOR'];
+const initialForm = { medicineId: '', medicineName: '', manufacturer: '', batchNumber: '', expiryDate: '', manufacturingLocation: '', quantity: '', verificationCode: '' };
+const statusConfig = { GENUINE: ['Genuine', 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30', ShieldCheck], COUNTERFEIT_OR_RECALLED: ['Counterfeit / Recalled', 'text-rose-300 bg-rose-500/10 border-rose-500/30', ShieldAlert], RECALLED: ['Recalled', 'text-rose-300 bg-rose-500/10 border-rose-500/30', XCircle], UNVERIFIED: ['Unverified', 'text-amber-300 bg-amber-500/10 border-amber-500/30', AlertTriangle] };
+function Badge({ status }) { const [label, cls, Icon] = statusConfig[status] || statusConfig.UNVERIFIED; return <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${cls}`}><Icon size={12}/>{label}</span>; }
+function Field({ label, name, value, onChange, type = 'text', placeholder, required = true }) { return <label className="block"><span className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">{label}</span><input name={name} value={value} onChange={onChange} type={type} required={required} placeholder={placeholder} className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/40" /></label>; }
 export default function App() {
-  const [currentView, setCurrentView] = useState('dashboard');
-  const [batches, setBatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [healthStatus, setHealthStatus] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Modals state
-  const [detailModalBatchId, setDetailModalBatchId] = useState(null);
-  const [detailModalInitialData, setDetailModalInitialData] = useState(null);
-  const [updateModalBatch, setUpdateModalBatch] = useState(null);
-  const [transferModalBatch, setTransferModalBatch] = useState(null);
-
-  // Fetch batches and health
-  const fetchData = useCallback(async (isBackground = false) => {
-    if (!isBackground) {
-      setLoading(true);
-    } else {
-      setIsRefreshing(true);
-    }
-    setError(null);
-
-    try {
-      // Parallel fetch for batches and health
-      const [batchesResult, healthResult] = await Promise.allSettled([
-        getAllBatches(),
-        checkHealth(),
-      ]);
-
-      if (batchesResult.status === 'fulfilled') {
-        setBatches(batchesResult.value || []);
-      } else {
-        setError(getErrorMessage(batchesResult.reason));
-      }
-
-      if (healthResult.status === 'fulfilled') {
-        setHealthStatus(healthResult.value);
-      } else {
-        setHealthStatus({ status: 'DOWN', error: getErrorMessage(healthResult.reason) });
-      }
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Handle batch created
-  const handleBatchCreated = (newBatch) => {
-    // Refresh ledger data
-    fetchData(true);
-  };
-
-  // Handle batch updated (storage conditions or custody transfer)
-  const handleBatchUpdated = (updatedBatch) => {
-    setBatches((prev) =>
-      prev.map((b) => (b.batchId === updatedBatch.batchId ? updatedBatch : b))
-    );
-    // Also if detail modal is open for this batch, update its initial data
-    if (detailModalBatchId === updatedBatch.batchId) {
-      setDetailModalInitialData(updatedBatch);
-    }
-    fetchData(true);
-  };
-
-  // Open detail modal
-  const handleViewBatch = (batch) => {
-    setDetailModalBatchId(batch.batchId);
-    setDetailModalInitialData(batch);
-  };
-
-  // Open update storage modal
-  const handleOpenUpdateStorage = (batch) => {
-    setUpdateModalBatch(batch);
-  };
-
-  // Open transfer custody modal
-  const handleOpenTransferCustody = (batch) => {
-    setTransferModalBatch(batch);
-  };
-
-  return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-white">
-      {/* Sidebar Navigation */}
-      <Sidebar
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        batchCount={batches.length}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-
-      {/* Main App Content Area */}
-      <div className="flex flex-1 flex-col min-w-0">
-        <Navbar
-          healthStatus={healthStatus}
-          isRefreshing={isRefreshing}
-          onRefresh={() => fetchData(true)}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        />
-
-        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto">
-          {currentView === 'dashboard' && (
-            <DashboardView
-              batches={batches}
-              loading={loading}
-              onNavigateBatches={() => setCurrentView('batches')}
-              onNavigateCreate={() => setCurrentView('create')}
-              onViewBatch={handleViewBatch}
-              onUpdateStorage={handleOpenUpdateStorage}
-              onTransferCustody={handleOpenTransferCustody}
-            />
-          )}
-
-          {currentView === 'batches' && (
-            <BatchList
-              batches={batches}
-              loading={loading}
-              error={error}
-              onRefresh={() => fetchData(true)}
-              onViewBatch={handleViewBatch}
-              onUpdateStorage={handleOpenUpdateStorage}
-              onTransferCustody={handleOpenTransferCustody}
-              onNavigateCreate={() => setCurrentView('create')}
-            />
-          )}
-
-          {currentView === 'create' && (
-            <CreateBatchView
-              onBatchCreated={handleBatchCreated}
-              onNavigateBatches={() => setCurrentView('batches')}
-            />
-          )}
-
-          {currentView === 'architecture' && <ArchitectureView />}
-        </main>
-
-        {/* Footer */}
-        <footer className="border-t border-slate-850 py-5 text-center text-xs text-slate-400">
-          <div className="flex items-center justify-center gap-2">
-            <span>AGRICHAIN Supply Chain Platform</span>
-            <span>•</span>
-            <span>Hyperledger Fabric Enterprise Network</span>
-            <span>•</span>
-            <span className="font-mono text-emerald-400">Channel: agrichannel</span>
-          </div>
-        </footer>
-      </div>
-
-      {/* Batch Details Modal */}
-      {detailModalBatchId && (
-        <BatchDetailModal
-          batchId={detailModalBatchId}
-          initialData={detailModalInitialData}
-          onClose={() => {
-            setDetailModalBatchId(null);
-            setDetailModalInitialData(null);
-          }}
-          onOpenUpdateStorage={(batch) => {
-            setDetailModalBatchId(null);
-            setDetailModalInitialData(null);
-            setUpdateModalBatch(batch);
-          }}
-          onOpenTransferCustody={(batch) => {
-            setDetailModalBatchId(null);
-            setDetailModalInitialData(null);
-            setTransferModalBatch(batch);
-          }}
-        />
-      )}
-
-      {/* Update Storage Modal */}
-      {updateModalBatch && (
-        <UpdateStorageModal
-          batch={updateModalBatch}
-          onClose={() => setUpdateModalBatch(null)}
-          onBatchUpdated={handleBatchUpdated}
-        />
-      )}
-
-      {/* Transfer Custody Modal */}
-      {transferModalBatch && (
-        <TransferCustodyModal
-          batch={transferModalBatch}
-          onClose={() => setTransferModalBatch(null)}
-          onBatchUpdated={handleBatchUpdated}
-        />
-      )}
-    </div>
-  );
+  const [medicines, setMedicines] = useState([]); const [health, setHealth] = useState(null); const [view, setView] = useState('registry'); const [query, setQuery] = useState(''); const [selected, setSelected] = useState(null); const [busy, setBusy] = useState(false); const [message, setMessage] = useState(null); const [form, setForm] = useState(initialForm); const [verifyForm, setVerifyForm] = useState({ scannedCode: '', verifier: '', location: '' }); const [transferForm, setTransferForm] = useState({ newCustodian: '', newRole: 'DISTRIBUTOR' }); const [recallForm, setRecallForm] = useState({ reason: '', recalledBy: '' });
+  const load = async () => { try { setMedicines(await getAllMedicines()); setHealth(await checkHealth()); } catch (e) { setHealth({ status: 'OFFLINE' }); setMessage({ type: 'error', text: getErrorMessage(e) }); } };
+  useEffect(() => { load(); }, []);
+  const filtered = useMemo(() => medicines.filter((m) => [m.medicineId, m.medicineName, m.manufacturer, m.batchNumber, m.currentCustodian].some((v) => String(v || '').toLowerCase().includes(query.toLowerCase()))), [medicines, query]);
+  const act = async (fn, success) => { try { setBusy(true); const result = await fn(); setSelected(result.medicine || result); setMessage({ type: 'success', text: success }); await load(); } catch (e) { setMessage({ type: 'error', text: getErrorMessage(e) }); } finally { setBusy(false); } };
+  const submitCreate = (e) => { e.preventDefault(); act(() => createMedicine({ ...form, quantity: Number(form.quantity) }), 'Medicine batch registered on the immutable ledger.'); setForm(initialForm); };
+  const current = selected ? medicines.find((m) => m.medicineId === selected.medicineId) || selected : null;
+  const total = medicines.length, genuine = medicines.filter((m) => m.authenticityStatus === 'GENUINE').length, recalled = medicines.filter((m) => m.status === 'RECALLED').length, unverified = total - genuine - recalled;
+  return <div className="min-h-screen bg-[#07111f] text-slate-100"><header className="border-b border-slate-800/80 bg-[#0a1627]/95"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4"><div className="flex items-center gap-3"><div className="rounded-xl bg-cyan-400/10 p-2.5 text-cyan-300"><FlaskConical size={22}/></div><div><div className="text-lg font-black tracking-tight">MEDICHAIN <span className="text-cyan-300">/</span> Verify</div><div className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">Counterfeit drug detection network</div></div></div><div className="flex items-center gap-4 text-xs"><span className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${health?.status === 'UP' ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300' : 'border-amber-400/20 bg-amber-400/10 text-amber-300'}`}><span className="h-1.5 w-1.5 rounded-full bg-current"/>Fabric {health?.status || 'CHECKING'}</span><button onClick={load} className="text-slate-400 hover:text-white"><RefreshCw size={16}/></button></div></div></header><main className="mx-auto max-w-7xl space-y-6 px-5 py-7"><div className="flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-cyan-300">Pharmaceutical supply-chain intelligence</p><h1 className="text-3xl font-black tracking-tight text-white">Trust every dose.</h1><p className="mt-2 max-w-xl text-sm text-slate-400">Register legitimate medicine batches, verify serialized codes, and expose counterfeit or recalled products with an immutable Hyperledger Fabric audit trail.</p></div><div className="flex gap-2"><button onClick={() => setView('registry')} className={`rounded-xl px-4 py-2 text-xs font-bold ${view === 'registry' ? 'bg-cyan-400 text-slate-950' : 'border border-slate-700 text-slate-300'}`}>Registry</button><button onClick={() => setView('register')} className={`rounded-xl px-4 py-2 text-xs font-bold ${view === 'register' ? 'bg-cyan-400 text-slate-950' : 'border border-slate-700 text-slate-300'}`}>Register medicine</button></div></div>{message && <div className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm ${message.type === 'error' ? 'border-rose-500/30 bg-rose-500/10 text-rose-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'}`}><span>{message.text}</span><button onClick={() => setMessage(null)}><XCircle size={16}/></button></div>}{view === 'register' ? <section className="rounded-2xl border border-slate-800 bg-[#0c1a2d] p-6"><div className="mb-6 flex items-center gap-3"><Factory className="text-cyan-300"/><div><h2 className="text-lg font-bold">Register a medicine batch</h2><p className="text-xs text-slate-400">The verification code becomes the product's on-chain authenticity anchor.</p></div></div><form onSubmit={submitCreate} className="grid gap-4 md:grid-cols-2"><Field label="Medicine ID" name="medicineId" value={form.medicineId} onChange={e => setForm({...form, medicineId: e.target.value})} placeholder="MED-2026-0001"/><Field label="Medicine name" name="medicineName" value={form.medicineName} onChange={e => setForm({...form, medicineName: e.target.value})} placeholder="Amoxicillin 500mg"/><Field label="Manufacturer" name="manufacturer" value={form.manufacturer} onChange={e => setForm({...form, manufacturer: e.target.value})} placeholder="Acme Pharma Ltd."/><Field label="Batch number" name="batchNumber" value={form.batchNumber} onChange={e => setForm({...form, batchNumber: e.target.value})} placeholder="AMX-26-091"/><Field label="Expiry date" name="expiryDate" type="date" value={form.expiryDate} onChange={e => setForm({...form, expiryDate: e.target.value})}/><Field label="Quantity (packs)" name="quantity" type="number" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} placeholder="10000"/><Field label="Manufacturing location" name="manufacturingLocation" value={form.manufacturingLocation} onChange={e => setForm({...form, manufacturingLocation: e.target.value})} placeholder="Hyderabad, India"/><Field label="Verification code / serial secret" name="verificationCode" value={form.verificationCode} onChange={e => setForm({...form, verificationCode: e.target.value})} placeholder="QR-9F7K-2A1C"/><div className="md:col-span-2 flex justify-end border-t border-slate-800 pt-4"><button disabled={busy} className="flex items-center gap-2 rounded-xl bg-cyan-400 px-5 py-2.5 text-sm font-black text-slate-950 disabled:opacity-50">{busy && <RefreshCw size={15} className="animate-spin"/>}Commit to Fabric <ArrowRight size={15}/></button></div></form></section> : <><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric icon={Package} label="Registered batches" value={total} tone="cyan"/><Metric icon={ShieldCheck} label="Genuine verifications" value={genuine} tone="emerald"/><Metric icon={ShieldAlert} label="Recalled batches" value={recalled} tone="rose"/><Metric icon={Activity} label="Awaiting verification" value={unverified} tone="amber"/></div><section className="rounded-2xl border border-slate-800 bg-[#0c1a2d] shadow-xl"><div className="flex flex-col justify-between gap-3 border-b border-slate-800 p-5 md:flex-row md:items-center"><div><h2 className="font-bold">Medicine registry</h2><p className="mt-1 text-xs text-slate-500">Every record is addressable by its medicine ID and batch number.</p></div><div className="relative"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search medicines..." className="rounded-xl border border-slate-700 bg-slate-950 py-2 pl-9 pr-3 text-xs outline-none focus:border-cyan-400"/></div></div><div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead className="bg-slate-950/50 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-5 py-3">Medicine / batch</th><th className="px-5 py-3">Manufacturer</th><th className="px-5 py-3">Custody</th><th className="px-5 py-3">Authenticity</th><th className="px-5 py-3 text-right">Action</th></tr></thead><tbody className="divide-y divide-slate-800/70">{filtered.map(m => <tr key={m.medicineId} className="hover:bg-slate-800/20"><td className="px-5 py-4"><div className="font-bold text-white">{m.medicineName}</div><div className="mt-1 font-mono text-[10px] text-cyan-300">{m.medicineId} · {m.batchNumber}</div></td><td className="px-5 py-4 text-slate-300">{m.manufacturer}<div className="text-[10px] text-slate-500">{m.expiryDate}</div></td><td className="px-5 py-4"><div className="font-semibold text-slate-200">{m.currentCustodian}</div><div className="text-[10px] text-slate-500">{m.currentRole}</div></td><td className="px-5 py-4"><Badge status={m.status === 'RECALLED' ? 'RECALLED' : m.authenticityStatus}/></td><td className="px-5 py-4 text-right"><button onClick={() => setSelected(m)} className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-1.5 font-bold text-cyan-300 hover:bg-cyan-400/10">Inspect <ChevronRight size={13}/></button></td></tr>)}</tbody></table>{filtered.length === 0 && <div className="p-12 text-center text-sm text-slate-500">No medicine records found. Register a batch to begin.</div>}</div></section></>}</main>{current && <Detail medicine={current} busy={busy} verifyForm={verifyForm} setVerifyForm={setVerifyForm} transferForm={transferForm} setTransferForm={setTransferForm} recallForm={recallForm} setRecallForm={setRecallForm} onClose={() => setSelected(null)} onVerify={() => act(() => verifyMedicine(current.medicineId, verifyForm), 'Verification attempt committed to the ledger.')} onTransfer={() => act(() => transferMedicine(current.medicineId, transferForm), 'Custody transfer committed to the ledger.')} onRecall={() => act(() => recallMedicine(current.medicineId, recallForm), 'Recall status committed to the ledger.')} />}</div>;
 }
+function Metric({ icon: Icon, label, value, tone }) { return <div className="rounded-2xl border border-slate-800 bg-[#0c1a2d] p-4"><div className={`mb-4 inline-flex rounded-xl p-2 ${tone === 'rose' ? 'bg-rose-400/10 text-rose-300' : tone === 'emerald' ? 'bg-emerald-400/10 text-emerald-300' : tone === 'amber' ? 'bg-amber-400/10 text-amber-300' : 'bg-cyan-400/10 text-cyan-300'}`}><Icon size={17}/></div><div className="text-2xl font-black text-white">{value}</div><div className="mt-1 text-xs text-slate-500">{label}</div></div>; }
+function Detail({ medicine: m, busy, verifyForm, setVerifyForm, transferForm, setTransferForm, recallForm, setRecallForm, onClose, onVerify, onTransfer, onRecall }) { return <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6"><div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-t-2xl border border-slate-700 bg-[#0c1a2d] p-6 shadow-2xl md:rounded-2xl"><div className="flex items-start justify-between"><div><p className="font-mono text-xs text-cyan-300">{m.medicineId} · {m.batchNumber}</p><h2 className="mt-1 text-xl font-black text-white">{m.medicineName}</h2><p className="mt-1 text-xs text-slate-400">{m.manufacturer} · expires {m.expiryDate}</p></div><button onClick={onClose} className="text-slate-500 hover:text-white"><XCircle/></button></div><div className="mt-5 grid gap-3 sm:grid-cols-4"><div className="rounded-xl bg-slate-950/60 p-3"><div className="text-[10px] uppercase text-slate-500">Status</div><div className="mt-2"><Badge status={m.status === 'RECALLED' ? 'RECALLED' : m.authenticityStatus}/></div></div><div className="rounded-xl bg-slate-950/60 p-3"><div className="text-[10px] uppercase text-slate-500">Quantity</div><div className="mt-2 font-bold">{m.quantity} packs</div></div><div className="rounded-xl bg-slate-950/60 p-3"><div className="text-[10px] uppercase text-slate-500">Custodian</div><div className="mt-2 truncate font-bold">{m.currentCustodian}</div></div><div className="rounded-xl bg-slate-950/60 p-3"><div className="text-[10px] uppercase text-slate-500">Location</div><div className="mt-2 truncate font-bold">{m.manufacturingLocation}</div></div></div><div className="mt-6 grid gap-4 md:grid-cols-3"><Action title="Verify product" icon={ClipboardCheck} tone="emerald" onSubmit={onVerify} busy={busy}><input value={verifyForm.scannedCode} onChange={e=>setVerifyForm({...verifyForm, scannedCode:e.target.value})} placeholder="Scan / enter code"/><input value={verifyForm.verifier} onChange={e=>setVerifyForm({...verifyForm, verifier:e.target.value})} placeholder="Verifier identity"/><input value={verifyForm.location} onChange={e=>setVerifyForm({...verifyForm, location:e.target.value})} placeholder="Scan location"/></Action><Action title="Transfer custody" icon={Truck} tone="cyan" onSubmit={onTransfer} busy={busy}><input value={transferForm.newCustodian} onChange={e=>setTransferForm({...transferForm, newCustodian:e.target.value})} placeholder="New organization"/><select value={transferForm.newRole} onChange={e=>setTransferForm({...transferForm, newRole:e.target.value})}>{roles.map(r=><option key={r}>{r}</option>)}</select></Action><Action title="Recall batch" icon={AlertTriangle} tone="rose" onSubmit={onRecall} busy={busy}><input value={recallForm.reason} onChange={e=>setRecallForm({...recallForm, reason:e.target.value})} placeholder="Recall reason"/><input value={recallForm.recalledBy} onChange={e=>setRecallForm({...recallForm, recalledBy:e.target.value})} placeholder="Authorized by"/></Action></div><div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/40 p-4"><div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400"><Activity size={14} className="text-cyan-300"/> Immutable verification history</div>{(m.verificationHistory || []).length ? m.verificationHistory.slice().reverse().map((v,i)=><div key={i} className="flex items-center justify-between border-t border-slate-800 py-2 text-xs"><span className={v.result === 'GENUINE' ? 'text-emerald-300' : 'text-rose-300'}>{v.result}</span><span className="text-slate-500">{v.verifier} · {v.location} · {v.timestamp}</span></div>) : <p className="text-xs text-slate-500">No verification attempts recorded.</p>}</div></div></div>; }
+function Action({ title, icon: Icon, tone, children, onSubmit, busy }) { return <form onSubmit={e=>{e.preventDefault(); onSubmit();}} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"><div className={`mb-3 flex items-center gap-2 text-xs font-bold ${tone === 'rose' ? 'text-rose-300' : tone === 'emerald' ? 'text-emerald-300' : 'text-cyan-300'}`}><Icon size={15}/>{title}</div><div className="space-y-2">{React.Children.map(children, child => React.cloneElement(child, { className: 'w-full rounded-lg border border-slate-700 bg-slate-900 px-2.5 py-2 text-xs text-white outline-none focus:border-cyan-400 ' + (child.props.className || ''), required: true }))}</div><button disabled={busy} className="mt-3 w-full rounded-lg bg-slate-800 py-2 text-[11px] font-bold text-slate-200 hover:bg-slate-700 disabled:opacity-50">Commit action</button></form>; }

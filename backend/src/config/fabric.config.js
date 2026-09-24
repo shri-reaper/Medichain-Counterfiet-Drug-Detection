@@ -20,8 +20,8 @@ const cryptoPath = process.env.CRYPTO_PATH || path.resolve(
 
 const config = {
     port: parseInt(process.env.PORT, 10) || 3000,
-    channelName: process.env.CHANNEL_NAME || 'agrichannel',
-    chaincodeName: process.env.CHAINCODE_NAME || 'agrichain',
+    channelName: process.env.CHANNEL_NAME || 'medichainchannel',
+    chaincodeName: process.env.CHAINCODE_NAME || 'medichain',
     mspId: process.env.MSP_ID || 'Org1MSP',
     cryptoPath: cryptoPath,
     keyDirectoryPath: process.env.KEY_DIRECTORY_PATH || path.resolve(

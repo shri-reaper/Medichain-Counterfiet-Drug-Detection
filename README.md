@@ -1,173 +1,83 @@
-# 🌱 AgriChain — Blockchain-Based Agricultural Supply Chain
+# MediChain Verify
 
-AgriChain is a blockchain-based agricultural supply chain tracking system built using **Hyperledger Fabric**.
+MediChain Verify is a Hyperledger Fabric application for pharmaceutical traceability and counterfeit drug detection. It registers medicine batches, validates serialized product codes, tracks custody, and records recalls on an immutable distributed ledger.
 
-It provides transparent and tamper-resistant tracking of agricultural batches from the farmer through the complete supply chain while maintaining an immutable record of custody and storage conditions.
+## Features
 
-## 🚀 Key Features
+- Medicine registration with manufacturer, batch, expiry, quantity, and verification code
+- Genuine, counterfeit, and recalled product verification
+- Immutable verification attempt history
+- Manufacturer-to-pharmacy custody tracking
+- Recall workflows for manufacturers and regulators
+- React dashboard with medicine registry and verification actions
+- Node.js and Express REST API
+- JavaScript Hyperledger Fabric chaincode
 
-- 📦 Agricultural batch creation and tracking
-- 🔗 Hyperledger Fabric blockchain ledger
-- 👨‍🌾 Farmer → Transporter → Distributor → Retailer custody tracking
-- 🔐 Immutable custody history
-- 🌡️ Storage temperature and humidity monitoring
-- 📊 Immutable storage telemetry audit trail
-- ⚠️ Automatic storage condition status
-- 🖥️ React-based dashboard
-- ⚙️ Node.js + Express backend
-- ⛓️ JavaScript chaincode
-- 🔄 REST API integration with Fabric
-
-## 🏗️ Architecture
+## Project structure
 
 ```text
-React Frontend
-      │
-      ▼
-Node.js / Express Backend
-      │
-      ▼
-Hyperledger Fabric Gateway
-      │
-      ▼
-AgriChain Chaincode
-      │
-      ▼
-Hyperledger Fabric Network
-      │
-      ▼
-Immutable Distributed Ledger
-📁 Project Structure
-agrichain/
+medichain/
 ├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   ├── controllers/
-│   │   ├── fabric/
-│   │   ├── middleware/
-│   │   └── routes/
-│   └── package.json
-│
+│   └── src/
+│       ├── config/
+│       ├── controllers/medicineController.js
+│       ├── fabric/
+│       └── routes/medicineRoutes.js
 ├── chaincode-javascript/
-│   ├── lib/
-│   │   └── assetTransfer.js
-│   ├── index.js
-│   └── package.json
-│
+│   ├── lib/medicineTraceability.js
+│   └── index.js
 └── frontend/
-    ├── src/
-    │   ├── api/
-    │   ├── components/
-    │   └── utils/
-    └── package.json
-⛓️ Supply Chain Flow
-FARMER
-   ↓
-TRANSPORTER
-   ↓
-DISTRIBUTOR
-   ↓
-RETAILER
+    └── src/
+        ├── api/medicineApi.js
+        └── App.jsx
+```
 
-Every custody transfer is recorded on the blockchain with:
+## Smart-contract transactions
 
-Previous custodian
-New custodian
-Supply-chain role
-Transaction timestamp
-🌡️ Storage Telemetry
+| Transaction | Description |
+| --- | --- |
+| `CreateMedicine` | Registers a medicine record and verification code |
+| `VerifyMedicine` | Records a scan and returns `GENUINE` or `COUNTERFEIT_OR_RECALLED` |
+| `TransferMedicine` | Adds a custody event and changes the current custodian |
+| `RecallMedicine` | Marks a record as recalled with a reason and actor |
+| `ReadMedicine` | Reads one medicine record |
+| `GetAllMedicines` | Reads all medicine records |
+| `GetVerificationHistory` | Reads all verification attempts |
+| `GetCustodyHistory` | Reads all custody events |
 
-Storage condition updates are recorded as immutable telemetry events containing:
+## REST API
 
-Temperature
-Humidity
-Storage status
-Transaction timestamp
+The backend serves these endpoints under `/api/medicines`:
 
-This creates an auditable history of storage conditions for every agricultural batch.
+- `POST /` — register a medicine
+- `GET /` — list medicines
+- `GET /:medicineId` — read a medicine
+- `POST /:medicineId/verify` — verify a scanned code
+- `POST /:medicineId/transfer` — transfer custody
+- `POST /:medicineId/recall` — recall a medicine
+- `GET /:medicineId/verification-history` — verification history
+- `GET /:medicineId/custody-history` — custody history
 
-🧪 Example Batch
-Batch: B002
-Crop: Alphonso Mango
+## Run the application
 
-Farmer_Ramesh
-      ↓
-Transporter_Speedy
-      ↓
-Central_Distributors
-      ↓
-Metro_Supermarket
+Start the Fabric network and deploy the `medichain` chaincode to the `medichainchannel` channel. Configure the backend Fabric connection through `.env` or the environment variables described in `backend/src/config/fabric.config.js`.
 
-The complete custody history is maintained on the Fabric ledger.
-
-🛠️ Technologies
-Hyperledger Fabric
-JavaScript Chaincode
-Node.js
-Express.js
-React
-Vite
-REST APIs
-Docker
-Git / GitHub
-▶️ Running the Project
-Backend
+```bash
 cd backend
 npm install
 npm start
-Frontend
+```
+
+In another terminal:
+
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
-The frontend runs on:
+The frontend uses `http://localhost:3000` as the default API base URL. Override it with `VITE_API_URL` when required.
 
-http://localhost:5173
+## Security note
 
-The backend runs on:
-
-http://localhost:3000
-Hyperledger Fabric
-
-The application is designed to run with the Hyperledger Fabric test network and the agrichannel channel.
-
-Chaincode:
-
-agrichain
-🔒 Security
-
-Sensitive files and generated Fabric material are excluded using .gitignore.
-
-The repository does not contain:
-
-.env files
-node_modules
-Private keys
-Fabric MSP material
-Generated certificates
-📌 Project Status
-
-Current implementation includes:
-
-✅ Batch management
-✅ Blockchain-backed storage
-✅ Custody tracking
-✅ Multi-stage supply-chain tracking
-✅ Storage telemetry history
-✅ REST API integration
-✅ React dashboard
-✅ End-to-end Fabric verification
-
-AgriChain — Transparent. Traceable. Tamper-resistant.
-
-
-Save:
-
-**Ctrl + O → Enter → Ctrl + X**
-
-Then run:
-
-```bash
-git add README.md
-git commit -m "Add project README"
-git push
+Verification codes should be generated and issued by authorized pharmaceutical organizations and delivered through protected QR, NFC, or serialization workflows. Production deployments should add Fabric endorsement policies, access control, private data collections, key management, and secure code issuance.
