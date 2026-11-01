@@ -1,33 +1,20 @@
-# Dependencies
 node_modules/
-
-# Environment / secrets
-.env
-.env.*
-!.env.example
-
-# Build output
-dist/
-build/
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS/editor files
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Fabric generated packages/artifacts
-*.tar.gz
-*.block
-*.tx
-*.pem
-*.key
-
-# Private Fabric crypto material
-msp/
-keystore/
-frontend/.src_old_root_backup/
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+**/.vercel/
+**/keystore/
+**/signcerts/
+**/*_sk
+**/*.pem
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+**/.vercel/
+**/keystore/
+**/signcerts/
+**/*_sk
+**/*.pem
+**/dist/

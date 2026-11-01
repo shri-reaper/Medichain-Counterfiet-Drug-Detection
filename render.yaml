@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: medichain
+    runtime: node
+    plan: free
+    buildCommand: npm --prefix backend install && npm --prefix frontend install && npm --prefix frontend run build
+    startCommand: node backend/src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: RPC_URL
+        value: https://ethereum-sepolia-rpc.publicnode.com
+      - key: CONTRACT_ADDRESS
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: CODE_PEPPER
+        generateValue: true
