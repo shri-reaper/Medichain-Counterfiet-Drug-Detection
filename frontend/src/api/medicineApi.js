@@ -27,6 +27,7 @@ export const createMedicine = async (medicine) => (await api.post('/medicines', 
 export const verifyMedicine = async (id, payload) => (await api.post(`/medicines/${encodeURIComponent(id)}/verify`, payload)).data;
 export const transferMedicine = async (id, payload) => (await api.post(`/medicines/${encodeURIComponent(id)}/transfer`, payload)).data;
 export const recallMedicine = async (id, payload) => (await api.post(`/medicines/${encodeURIComponent(id)}/recall`, payload)).data;
+export const reportCounterfeit = async (id, payload) => (await api.post(`/medicines/${encodeURIComponent(id)}/report-counterfeit`, payload)).data;
 export const getMedicine = async (id) => (await api.get(`/medicines/${encodeURIComponent(id)}`)).data;
 
 export default api;

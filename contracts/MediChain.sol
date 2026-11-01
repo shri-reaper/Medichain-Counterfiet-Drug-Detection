@@ -13,6 +13,7 @@ contract MediChain {
     struct CustodyEvent { string from; string to; string role; uint256 timestamp; }
     struct VerificationEvent { bytes32 scannedCodeHash; string verifier; string location; string result; uint256 timestamp; }
     struct RecallEvent { string reason; string recalledBy; uint256 timestamp; }
+    struct CounterfeitReport { string reportedBy; string location; string details; bool resolved; uint256 timestamp; }
 
     struct Medicine {
         string medicineId;
@@ -30,6 +31,7 @@ contract MediChain {
         CustodyEvent[] custodyHistory;
         VerificationEvent[] verificationHistory;
         RecallEvent[] recallHistory;
+        CounterfeitReport[] reports;
         uint256 createdAt;
         uint256 lastUpdatedAt;
     }
@@ -47,6 +49,7 @@ contract MediChain {
     event MedicineVerified(string medicineId, string result, string verifier);
     event MedicineTransferred(string medicineId, string toCustodian, string role);
     event MedicineRecalled(string medicineId, string recalledBy);
+    event CounterfeitReported(string medicineId, string reportedBy, string location);
 
     modifier onlyOperator() {
         require(msg.sender == operator, "Only the operator can write");
@@ -180,12 +183,35 @@ contract MediChain {
         m.status = "RECALLED";
         m.authenticityStatus = "RECALLED";
         m.recallHistory.push(RecallEvent(reason, recalledBy, block.timestamp));
+        for (uint256 i = 0; i < m.reports.length; i++) { m.reports[i].resolved = true; }
         m.custodyHistory.push(CustodyEvent(m.currentCustodian, m.manufacturer, "MANUFACTURER (RECALLED)", block.timestamp));
         m.currentCustodian = m.manufacturer;
         m.currentRole = "MANUFACTURER";
         m.lastUpdatedAt = block.timestamp;
 
         emit MedicineRecalled(medicineId, recalledBy);
+    }
+
+    /// The current custodian flags a suspected counterfeit. The manufacturer sees the open
+    /// report and can then recall the batch (which marks all reports resolved).
+    function reportCounterfeit(
+        string calldata medicineId,
+        string calldata reportedBy,
+        string calldata location,
+        string calldata details
+    ) external onlyOperator {
+        Medicine storage m = _load(medicineId);
+        require(!_is(m.status, "RECALLED"), "Action blocked on-chain: Asset is already recalled.");
+        _req(reportedBy, "Reporter");
+        _req(details, "Report details");
+        require(bytes(details).length <= 500, "Report details must be 500 characters or fewer");
+        require(_is(reportedBy, m.currentCustodian), "Only the current custodian can report a counterfeit");
+
+        m.reports.push(CounterfeitReport(reportedBy, location, details, false, block.timestamp));
+        m.authenticityStatus = "SUSPECTED_COUNTERFEIT";
+        m.lastUpdatedAt = block.timestamp;
+
+        emit CounterfeitReported(medicineId, reportedBy, location);
     }
 
     function _is(string memory a, string memory b) private pure returns (bool) {

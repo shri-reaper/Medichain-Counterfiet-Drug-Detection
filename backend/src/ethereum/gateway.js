@@ -8,6 +8,7 @@ const TUPLE_MEDICINE =
     'tuple(string from,string to,string role,uint256 timestamp)[] custodyHistory,' +
     'tuple(bytes32 scannedCodeHash,string verifier,string location,string result,uint256 timestamp)[] verificationHistory,' +
     'tuple(string reason,string recalledBy,uint256 timestamp)[] recallHistory,' +
+    'tuple(string reportedBy,string location,string details,bool resolved,uint256 timestamp)[] reports,' +
     'uint256 createdAt,uint256 lastUpdatedAt)';
 
 const ABI = [
@@ -15,6 +16,7 @@ const ABI = [
     'function verifyMedicine(string medicineId,bytes32 scannedCodeHash,string verifier,string location)',
     'function transferMedicine(string medicineId,string newCustodian,string newRole)',
     'function recallMedicine(string medicineId,string reason,string recalledBy)',
+    'function reportCounterfeit(string medicineId,string reportedBy,string location,string details)',
     'function medicineCount() view returns (uint256)',
     'function medicineIdAt(uint256 index) view returns (string)',
     `function readMedicine(string medicineId) view returns (${TUPLE_MEDICINE})`,
@@ -75,6 +77,7 @@ function normalizeError(e) {
     }
     const err = new Error(message);
     if (e?.code === 'INSUFFICIENT_FUNDS') err.statusCode = 503;
+    else if (/Only the current custodian/.test(message)) err.statusCode = 403;
     else if (/does not exist/.test(message)) err.statusCode = 404;
     else if (/already exists|already in use|already registered|already recalled/.test(message)) err.statusCode = 409;
     else if (/required|must be|Invalid role|blocked/.test(message)) err.statusCode = 400;
@@ -123,6 +126,8 @@ function toMedicine(r) {
             scannedCodeHash: v.scannedCodeHash, verifier: v.verifier, location: v.location, result: v.result, timestamp: iso(v.timestamp),
         })),
         recallHistory: r.recallHistory.map((x) => ({ reason: x.reason, recalledBy: x.recalledBy, timestamp: iso(x.timestamp) })),
+        counterfeitReports: r.reports.map((x) => ({ reportedBy: x.reportedBy, location: x.location, details: x.details, resolved: x.resolved, timestamp: iso(x.timestamp) })),
+        openReportCount: r.reports.filter((x) => !x.resolved).length,
         createdAt: iso(r.createdAt),
         lastUpdatedAt: iso(r.lastUpdatedAt),
     };

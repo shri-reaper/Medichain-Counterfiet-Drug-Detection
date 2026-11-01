@@ -14,6 +14,13 @@ React dashboard  ->  Express API (ethers v6)  ->  MediChain.sol on Sepolia
 - Only the backend wallet (the contract *operator*) can write; anyone can read the contract on Etherscan.
 - REST API is unchanged from the Fabric version (`/api/medicines`, `/verify`, `/transfer`, `/recall`, histories, `/api/health`).
 
+## Counterfeit reporting
+The current custodian can file a counterfeit report from a medicine's detail panel. The batch is flagged
+`SUSPECTED_COUNTERFEIT`, a red/orange **Counterfeit Alerts** panel appears on the registry for the manufacturer,
+and **Review & Recall** opens the recall form pre-filled with the report. Recalling marks all reports resolved.
+API: `POST /api/medicines/:id/report-counterfeit` with `reportedBy`, `location`, `details`.
+Note: this feature changed the contract, so redeploy it in Remix and update `CONTRACT_ADDRESS` in Render.
+
 ## Deploy with no local software (browser only)
 
 **1. Wallet + test ETH.** Install MetaMask, create a **new throwaway account** (never reuse a real one), switch to the Sepolia network, and get free Sepolia ETH from a faucet (Google Cloud Web3 faucet, Alchemy faucet, or the PoW faucet).

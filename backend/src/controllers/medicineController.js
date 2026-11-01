@@ -70,6 +70,23 @@ async function recallMedicine(req, res, next) {
     } catch (e) { return next(gw.normalizeError(e)); }
 }
 
+async function reportCounterfeit(req, res, next) {
+    try {
+        const { reportedBy, location, details } = req.body || {};
+        if (!text(reportedBy) || !text(details)) throw bad('reportedBy and details are required.');
+        if (text(details).length > 500) throw bad('Details must be 500 characters or fewer.');
+        const id = text(req.params.medicineId);
+        const current = await gw.readMedicine(id);
+        if (current.status === 'RECALLED') { const e = new Error('Asset is already recalled.'); e.statusCode = 409; throw e; }
+        if (text(reportedBy).toLowerCase() !== current.currentCustodian.trim().toLowerCase()) {
+            const e = new Error(`Only the current custodian (${current.currentCustodian}) can report a counterfeit.`);
+            e.statusCode = 403; throw e;
+        }
+        const txHash = await gw.write('reportCounterfeit', [id, current.currentCustodian, text(location) || 'UNKNOWN', text(details)]);
+        return res.status(201).json({ ...(await gw.readMedicine(id)), txHash });
+    } catch (e) { return next(gw.normalizeError(e)); }
+}
+
 async function getVerificationHistory(req, res, next) {
     try { return res.json((await gw.readMedicine(req.params.medicineId)).verificationHistory); } catch (e) { return next(gw.normalizeError(e)); }
 }
@@ -78,4 +95,4 @@ async function getCustodyHistory(req, res, next) {
     try { return res.json((await gw.readMedicine(req.params.medicineId)).custodyHistory); } catch (e) { return next(gw.normalizeError(e)); }
 }
 
-module.exports = { createMedicine, getMedicineById, getAllMedicines, verifyMedicine, transferMedicine, recallMedicine, getVerificationHistory, getCustodyHistory };
+module.exports = { createMedicine, getMedicineById, getAllMedicines, verifyMedicine, transferMedicine, recallMedicine, reportCounterfeit, getVerificationHistory, getCustodyHistory };

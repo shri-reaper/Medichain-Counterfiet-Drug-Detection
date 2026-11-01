@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, ArrowRight, ChevronRight, ClipboardCheck, Factory, FlaskConical, Package, RefreshCw, Search, ShieldAlert, ShieldCheck, Truck, XCircle, Shield } from 'lucide-react';
-import { checkHealth, createMedicine, getAllMedicines, getErrorMessage, recallMedicine, transferMedicine, verifyMedicine } from './api/medicineApi';
+import { checkHealth, createMedicine, getAllMedicines, getErrorMessage, recallMedicine, reportCounterfeit, transferMedicine, verifyMedicine } from './api/medicineApi';
 import { Toaster, toast } from 'react-hot-toast';
 import { QRCodeSVG } from 'qrcode.react';
 import { Scanner } from '@yudiel/react-qr-scanner';
@@ -12,6 +12,8 @@ const initialForm = { medicineId: '', medicineName: '', manufacturer: '', batchN
 const statusConfig = { 
   GENUINE: ['Genuine', 'text-emerald-400 bg-emerald-500/20 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.4)]', ShieldCheck], 
   COUNTERFEIT_OR_RECALLED: ['Counterfeit / Recalled', 'text-rose-400 bg-rose-500/20 border-rose-500/50 shadow-[0_0_15px_rgba(225,29,72,0.4)]', ShieldAlert], 
+  COUNTERFEIT: ['Counterfeit', 'text-rose-400 bg-rose-500/20 border-rose-500/50 shadow-[0_0_15px_rgba(225,29,72,0.4)]', ShieldAlert], 
+  SUSPECTED_COUNTERFEIT: ['Counterfeit Reported', 'text-orange-400 bg-orange-500/20 border-orange-500/50 shadow-[0_0_15px_rgba(249,115,22,0.4)]', ShieldAlert], 
   RECALLED: ['Recalled', 'text-rose-400 bg-rose-500/20 border-rose-500/50 shadow-[0_0_15px_rgba(225,29,72,0.4)]', XCircle], 
   UNVERIFIED: ['Unverified', 'text-amber-400 bg-amber-500/20 border-amber-500/50', AlertTriangle] 
 };
@@ -52,6 +54,7 @@ export default function App() {
   const [verifyForm, setVerifyForm] = useState({ scannedCode: '', verifier: '', location: '' }); 
   const [transferForm, setTransferForm] = useState({ newCustodian: '', newRole: 'DISTRIBUTOR', scannedCode: '' }); 
   const [recallForm, setRecallForm] = useState({ reason: '', recalledBy: '', scannedCode: '' });
+  const [reportForm, setReportForm] = useState({ reportedBy: '', location: '', details: '' });
   const getErrorMessage = (err) => {
     const fullError = JSON.stringify(err?.response?.data || err) + String(err);
     
@@ -349,6 +352,38 @@ const goToRegistry = (filter = 'ALL', hint = '') => {
 />
             </div>
             
+            {medicines.filter((m) => m.status !== 'RECALLED' && (m.openReportCount || 0) > 0).length > 0 && (
+              <section className="mt-8 rounded-3xl border border-orange-500/40 bg-orange-500/10 p-6 shadow-[0_0_30px_rgba(249,115,22,0.15)]">
+                <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-400">
+                  <ShieldAlert size={16}/> Counterfeit Alerts - Manufacturer Action Required
+                </div>
+                {medicines.filter((m) => m.status !== 'RECALLED' && (m.openReportCount || 0) > 0).map((m) => {
+                  const last = m.counterfeitReports[m.counterfeitReports.length - 1];
+                  return (
+                    <div key={m.medicineId} className="flex flex-col gap-3 border-t border-orange-500/20 py-3 md:flex-row md:items-center md:justify-between">
+                      <div className="text-sm text-slate-300">
+                        <span className="font-bold text-white">{m.medicineName}</span> <span className="text-slate-500">({m.medicineId})</span>
+                        <div className="text-xs text-slate-400">
+                          Reported by <span className="font-bold text-white">{last.reportedBy}</span> at {last.location} on {new Date(last.timestamp).toLocaleString()}: {last.details}
+                        </div>
+                        <div className="mt-1 text-[11px] font-bold uppercase tracking-widest text-orange-400">{m.manufacturer} should review and recall this batch</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRecallForm({ reason: `Counterfeit reported by ${last.reportedBy}: ${last.details}`.slice(0, 200), recalledBy: m.manufacturer, scannedCode: '' });
+                          setSelected(m);
+                        }}
+                        className="rounded-xl border border-rose-500/50 bg-rose-500/20 px-5 py-3 text-xs font-black uppercase tracking-widest text-rose-400 hover:bg-rose-500/30"
+                      >
+                        Review &amp; Recall
+                      </button>
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+
             <section id="medicine-registry" className="mt-8 rounded-3xl border border-white/10 bg-[#0c1322]/60 shadow-2xl backdrop-blur-xl overflow-hidden">
               <div className="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/5 p-6 md:flex-row md:items-center">
                 <div>
@@ -430,6 +465,8 @@ const goToRegistry = (filter = 'ALL', hint = '') => {
             setTransferForm={setTransferForm} 
             recallForm={recallForm} 
             setRecallForm={setRecallForm} 
+            reportForm={reportForm} 
+            setReportForm={setReportForm} 
             onClose={() => setSelected(null)} 
             onVerify={() => {
               if (current.status === 'RECALLED') {
@@ -448,6 +485,18 @@ const goToRegistry = (filter = 'ALL', hint = '') => {
                 return;
               }
               act(() => transferMedicine(current.medicineId, transferForm), 'Custody transfer committed to the ledger.');
+            }} 
+            onReport={async () => {
+              if (current.status === 'RECALLED') {
+                toast.error('Action blocked: This asset is already recalled.');
+                return;
+              }
+              if (reportForm.reportedBy.trim().toLowerCase() !== current.currentCustodian.trim().toLowerCase()) {
+                toast.error(`Only the current custodian (${current.currentCustodian}) can report a counterfeit.`);
+                return;
+              }
+              const ok = await act(() => reportCounterfeit(current.medicineId, reportForm), 'Counterfeit report filed on-chain. The manufacturer has been alerted.');
+              if (ok) setReportForm({ reportedBy: '', location: '', details: '' });
             }} 
             onRecall={() => {
               if (current.status === 'RECALLED') {
@@ -522,7 +571,7 @@ function Metric({ icon: Icon, label, value, tone, onClick, active }) {
   );
 }
 
-function Detail({ medicine: m, busy, verifyForm, setVerifyForm, transferForm, setTransferForm, recallForm, setRecallForm, onClose, onVerify, onTransfer, onRecall }) { 
+function Detail({ medicine: m, busy, verifyForm, setVerifyForm, transferForm, setTransferForm, recallForm, setRecallForm, reportForm, setReportForm, onClose, onVerify, onTransfer, onRecall, onReport }) { 
   const [isScanningVerify, setIsScanningVerify] = useState(false);
   const [isScanningTransfer, setIsScanningTransfer] = useState(false);
   const [isScanningRecall, setIsScanningRecall] = useState(false);
@@ -555,7 +604,7 @@ function Detail({ medicine: m, busy, verifyForm, setVerifyForm, transferForm, se
           <div className="rounded-2xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm"><div className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Geolocation</div><div className="mt-2 truncate text-lg font-black text-white">{m.manufacturingLocation}</div></div>
         </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
+        <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <Action title="Cryptographic Verify" icon={ClipboardCheck} tone="emerald" onSubmit={onVerify} busy={busy}>
             {isScanningVerify ? (
               <div className="mb-3 w-full overflow-hidden rounded-xl border-2 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
@@ -616,6 +665,12 @@ function Detail({ medicine: m, busy, verifyForm, setVerifyForm, transferForm, se
             <select value={transferForm.newRole} onChange={e=>setTransferForm({...transferForm, newRole:e.target.value})}>{roles.map(r=><option key={r}>{r}</option>)}</select>
           </Action>
 
+          <Action title="Report Counterfeit" icon={ShieldAlert} tone="amber" onSubmit={onReport} busy={busy}>
+            <p className="text-xs text-slate-400">Current custodian only. Flags this batch as suspected counterfeit and alerts the manufacturer to recall it.</p>
+            <input value={reportForm.reportedBy} onChange={e=>setReportForm({...reportForm, reportedBy:e.target.value})} placeholder={`Reporting entity (${m.currentCustodian})`}/>
+            <input value={reportForm.location} onChange={e=>setReportForm({...reportForm, location:e.target.value})} placeholder="Where it was found"/>
+            <input value={reportForm.details} maxLength={500} onChange={e=>setReportForm({...reportForm, details:e.target.value})} placeholder="What looks counterfeit?"/>
+          </Action>
           <Action title="Burn / Recall Asset" icon={AlertTriangle} tone="rose" onSubmit={onRecall} busy={busy}>
             {isScanningRecall ? (
               <div className="mb-3 w-full overflow-hidden rounded-xl border-2 border-rose-500/50 shadow-[0_0_20px_rgba(225,29,72,0.2)]">
@@ -647,6 +702,18 @@ function Detail({ medicine: m, busy, verifyForm, setVerifyForm, transferForm, se
           </Action>
         </div>
 
+        {(m.counterfeitReports || []).length > 0 && (
+          <div className="mt-8 rounded-2xl border border-orange-500/30 bg-orange-500/5 p-6">
+            <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-orange-400"><ShieldAlert size={16}/> Counterfeit Reports</div>
+            {m.counterfeitReports.slice().reverse().map((r, i) => (
+              <div key={i} className="border-t border-white/10 py-3 text-xs text-slate-400">
+                <span className="font-bold text-white">{r.reportedBy}</span> at {r.location} | {new Date(r.timestamp).toLocaleString()} | <span className={r.resolved ? 'text-emerald-400' : 'text-orange-400'}>{r.resolved ? 'Resolved by recall' : 'Open'}</span>
+                <div className="mt-1 text-slate-300">{r.details}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mt-8 rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur-md">
           <div className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-cyan-400">
             <Activity size={16}/> Supply Chain Custody Trail
@@ -675,6 +742,7 @@ function Action({ title, icon: Icon, tone, children, onSubmit, busy }) {
     emerald: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
     cyan: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/5',
     rose: 'text-rose-400 border-rose-500/20 bg-rose-500/5',
+    amber: 'text-orange-400 border-orange-500/20 bg-orange-500/5',
   };
 
   return (
@@ -697,6 +765,7 @@ function Action({ title, icon: Icon, tone, children, onSubmit, busy }) {
         disabled={busy} 
         className={`mt-5 w-full rounded-xl border py-3.5 text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50 ${
           tone === 'emerald' ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]' :
+          tone === 'amber' ? 'border-orange-500/50 bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 hover:shadow-[0_0_20px_rgba(249,115,22,0.3)]' :
           tone === 'rose' ? 'border-rose-500/50 bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 hover:shadow-[0_0_20px_rgba(225,29,72,0.3)]' :
           'border-cyan-500/50 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]'
         }`}
