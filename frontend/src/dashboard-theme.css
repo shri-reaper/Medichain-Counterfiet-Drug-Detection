@@ -1,0 +1,386 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+.dashboard-theme {
+  min-height: 100vh !important;
+  background: #f7f5ef !important;
+  color: #211c32 !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+.dashboard-theme h1,
+.dashboard-theme h2,
+.dashboard-theme h3 {
+  font-family: 'Space Grotesk', sans-serif !important;
+  letter-spacing: -0.035em;
+}
+
+/* Give the dashboard a calm, editorial background. */
+.dashboard-theme > .fixed.inset-0.pointer-events-none {
+  display: none !important;
+}
+
+.dashboard-theme > header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-color: #e8e3ed !important;
+  background: rgba(250, 248, 243, 0.94) !important;
+  backdrop-filter: blur(18px);
+}
+
+.dashboard-theme > header > div {
+  min-height: 76px;
+}
+
+/* Keep the hero confident and readable. */
+.dashboard-theme main {
+  padding-top: 2.5rem !important;
+}
+
+.dashboard-theme main h1 {
+  background: none !important;
+  color: #211c32 !important;
+  -webkit-text-fill-color: #211c32 !important;
+  font-size: clamp(2.6rem, 5vw, 4rem) !important;
+  line-height: 1.05 !important;
+}
+
+.dashboard-theme main h2,
+.dashboard-theme main h3 {
+  color: #211c32 !important;
+}
+
+.dashboard-theme main p.text-slate-400,
+.dashboard-theme main p.text-slate-500,
+.dashboard-theme main div.text-slate-400,
+.dashboard-theme main div.text-slate-500 {
+  color: #716b7c !important;
+}
+
+/* Turn the statistic cards and registry into clean, elevated surfaces. */
+.dashboard-theme main [class*="bg-[#0c1322]"],
+.dashboard-theme main [class*="bg-[#060c18]"],
+.dashboard-theme main [class*="bg-white/5"] {
+  border-color: #e7e2ec !important;
+  background-color: #fff !important;
+  box-shadow: 0 12px 36px rgba(39, 29, 65, 0.06) !important;
+}
+
+.dashboard-theme main .text-white {
+  color: #211c32 !important;
+}
+
+.dashboard-theme main button.text-white,
+.dashboard-theme main a.text-white {
+  color: #fff !important;
+}
+
+.dashboard-theme main [class*="text-slate-300"],
+.dashboard-theme main [class*="text-slate-200"] {
+  color: #464153 !important;
+}
+
+.dashboard-theme main [class*="text-slate-500"] {
+  color: #817b8b !important;
+}
+
+/* Use MediChain violet as the main action color. */
+.dashboard-theme main [class*="text-cyan-"],
+.dashboard-theme main [class*="text-indigo-"] {
+  color: #6242bd !important;
+}
+
+.dashboard-theme main [class*="border-cyan-"],
+.dashboard-theme main [class*="border-indigo-"] {
+  border-color: #ded6f1 !important;
+}
+
+.dashboard-theme main button[class*="from-cyan-"],
+.dashboard-theme main button[class*="bg-gradient-to-r"] {
+  border-color: transparent !important;
+  background: #6242bd !important;
+  background-image: none !important;
+  box-shadow: 0 8px 20px rgba(98, 66, 189, 0.2) !important;
+}
+
+.dashboard-theme main button[class*="from-cyan-"]:hover,
+.dashboard-theme main button[class*="bg-gradient-to-r"]:hover {
+  background: #5033a2 !important;
+}
+
+/* Make the registry easier to scan. */
+.dashboard-theme main table thead {
+  background: #f1eef6 !important;
+  color: #716b7c !important;
+}
+
+.dashboard-theme main table tbody tr {
+  border-color: #eeeaf2 !important;
+}
+
+.dashboard-theme main table tbody tr:hover {
+  background: #f7f4fc !important;
+}
+
+.dashboard-theme main input,
+.dashboard-theme main select {
+  border-color: #ded9e5 !important;
+  background: #fff !important;
+  color: #211c32 !important;
+  box-shadow: none !important;
+}
+
+.dashboard-theme main input::placeholder {
+  color: #9a94a4 !important;
+}
+
+.dashboard-theme main input:focus,
+.dashboard-theme main select:focus {
+  border-color: #8c73cf !important;
+  outline: 3px solid rgba(98, 66, 189, 0.12) !important;
+}
+
+/* Give action cards a quieter, more professional feel. */
+.dashboard-theme main form {
+  border-color: #e7e2ec !important;
+  background: #fff !important;
+  box-shadow: 0 12px 36px rgba(39, 29, 65, 0.06) !important;
+}
+
+.dashboard-theme main form > div:first-child {
+  border-color: #eeeaf2 !important;
+}
+
+/* Keep status badges distinct and meaningful. */
+.dashboard-theme main [class*="text-emerald-"] {
+  color: #137a58 !important;
+}
+
+.dashboard-theme main [class*="text-rose-"] {
+  color: #b53b52 !important;
+}
+
+.dashboard-theme main [class*="text-amber-"] {
+  color: #956400 !important;
+}
+.dashboard-theme {
+  background: #eeedf3 !important;
+}
+
+.dashboard-theme > header {
+  background: rgba(244, 242, 248, 0.97) !important;
+}
+
+.dashboard-theme main {
+  background: transparent !important;
+}
+.dashboard-theme {
+  background: #080b16 !important;
+  color: #eef2ff !important;
+}
+
+.dashboard-theme > header {
+  background: rgba(11, 16, 32, 0.96) !important;
+  border-color: #22283a !important;
+}
+
+.dashboard-theme > header .text-2xl {
+  color: #f8fafc !important;
+}
+
+.dashboard-theme > header [class*="text-[#6242bd]"] {
+  color: #a78bfa !important;
+}
+
+.dashboard-theme > header [class*="text-[#716b7c]"] {
+  color: #aab1c2 !important;
+}
+
+.dashboard-theme main {
+  background: transparent !important;
+}
+
+.dashboard-theme main h1,
+.dashboard-theme main h2,
+.dashboard-theme main h3 {
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc !important;
+}
+
+.dashboard-theme main [class*="bg-[#0c1322]"],
+.dashboard-theme main [class*="bg-[#060c18]"],
+.dashboard-theme main [class*="bg-white/5"],
+.dashboard-theme main form {
+  border-color: #252c40 !important;
+  background-color: #111827 !important;
+  color: #eef2ff !important;
+}
+
+.dashboard-theme main .text-white {
+  color: #f8fafc !important;
+}
+
+.dashboard-theme main button[class*="text-slate-400"] {
+  color: #c3cada !important;
+}
+
+.dashboard-theme main [class*="text-slate-300"],
+.dashboard-theme main [class*="text-slate-200"] {
+  color: #d4d9e5 !important;
+}
+
+.dashboard-theme main [class*="text-slate-400"],
+.dashboard-theme main [class*="text-slate-500"] {
+  color: #9ba5ba !important;
+}
+
+.dashboard-theme main [class*="text-cyan-"],
+.dashboard-theme main [class*="text-indigo-"] {
+  color: #b7a3ff !important;
+}
+
+.dashboard-theme main input,
+.dashboard-theme main select {
+  border-color: #343b51 !important;
+  background: #0b1020 !important;
+  color: #f8fafc !important;
+}
+
+.dashboard-theme main input::placeholder {
+  color: #8791a7 !important;
+}
+
+.dashboard-theme main table thead {
+  background: #0b1020 !important;
+  color: #aeb7ca !important;
+}
+
+.dashboard-theme main table tbody tr {
+  border-color: #252c40 !important;
+}
+
+.dashboard-theme main table tbody tr:hover {
+  background: #19172a !important;
+}
+
+.dashboard-theme main button[class*="from-cyan-"],
+.dashboard-theme main button[class*="bg-gradient-to-r"] {
+  background: #6242bd !important;
+  background-image: none !important;
+  color: #fff !important;
+}
+
+.dashboard-theme main button[class*="from-cyan-"]:hover,
+.dashboard-theme main button[class*="bg-gradient-to-r"]:hover {
+  background: #7658d1 !important;
+}
+.medi-sidebar {
+  position: fixed;
+  z-index: 20;
+  top: 100px;
+  bottom: 18px;
+  left: 16px;
+  display: flex;
+  width: 176px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 10px;
+  border: 1px solid #252c40;
+  border-radius: 22px;
+  background: #101625;
+}
+
+.medi-sidebar-heading {
+  margin: 8px 10px 10px;
+  color: #8791a7;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.medi-nav-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  padding: 12px 11px;
+  color: #b8c0d1;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.medi-nav-item:hover {
+  transform: translateX(2px);
+  background: #1b2233;
+  color: #fff;
+}
+
+.medi-nav-item.is-active {
+  background: #6242bd;
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(98, 66, 189, 0.24);
+}
+
+.medi-sidebar-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  border-top: 1px solid #252c40;
+  padding: 16px 8px 8px;
+  color: #e8eaf1;
+  font-size: 11px;
+}
+
+.medi-sidebar-note small {
+  display: block;
+  margin-top: 4px;
+  color: #9ba5ba;
+  text-transform: capitalize;
+}
+
+.medi-sidebar-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #a0c84d;
+  box-shadow: 0 0 12px rgba(160, 200, 77, 0.55);
+}
+
+@media (min-width: 901px) {
+  .dashboard-theme main {
+    max-width: none !important;
+    margin-right: 24px !important;
+    margin-left: 208px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .medi-sidebar {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    display: grid;
+    width: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 12px 16px 0;
+  }
+
+  .medi-sidebar-heading,
+  .medi-sidebar-note {
+    display: none;
+  }
+
+  .dashboard-theme main {
+    margin: 0 16px !important;
+  }
+}

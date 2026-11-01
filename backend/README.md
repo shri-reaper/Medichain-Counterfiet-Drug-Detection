@@ -1,74 +1,24 @@
 # MediChain Backend API
 
-Node.js and Express REST API for the MediChain counterfeit drug detection ledger. The service uses the Hyperledger Fabric Gateway SDK to submit and evaluate medicine traceability transactions.
+Express REST API that talks to the `MediChain.sol` contract on Ethereum Sepolia using `ethers` v6.
 
-## Configuration
+## Environment variables (see `.env.example`)
 
-Configuration is loaded from `.env` and `src/config/fabric.config.js`.
+| Variable | Description |
+| --- | --- |
+| `PORT` | HTTP port (default `3000`) |
+| `RPC_URL` | Sepolia JSON-RPC endpoint (default: free public node) |
+| `CONTRACT_ADDRESS` | Deployed `MediChain` contract address |
+| `PRIVATE_KEY` | Throwaway operator wallet key (needs a little Sepolia ETH) |
+| `CODE_PEPPER` | Secret used to HMAC verification codes before they go on-chain. Never change it after registering medicines |
 
-| Variable | Description | Default |
-| --- | --- | --- |
-| `PORT` | HTTP server port | `3000` |
-| `CHANNEL_NAME` | Fabric channel | `medichainchannel` |
-| `CHAINCODE_NAME` | Deployed contract name | `medichain` |
-| `MSP_ID` | Fabric organization MSP | `Org1MSP` |
-| `CRYPTO_PATH` | Organization crypto material path | Fabric test-network path |
-| `KEY_DIRECTORY_PATH` | Admin private key directory | Derived from `CRYPTO_PATH` |
-| `CERT_DIRECTORY_PATH` | Admin certificate directory | Derived from `CRYPTO_PATH` |
-| `TLS_CERT_PATH` | Peer TLS CA path | Derived from `CRYPTO_PATH` |
-| `PEER_ENDPOINT` | Gateway gRPC endpoint | `localhost:7051` |
-| `PEER_HOST_ALIAS` | TLS hostname override | `peer0.org1.example.com` |
+If any of the last three are missing the server still starts; `/api/health` reports `NOT_CONFIGURED` and the API returns 503.
 
-## Start the service
-
-```bash
-npm install
-npm start
-```
-
-Use `npm run dev` for Node watch mode.
-
-## API endpoints
-
-All medicine routes are under `/api/medicines`.
+## Endpoints
 
 - `GET /api/health`
-- `POST /api/medicines`
-- `GET /api/medicines`
-- `GET /api/medicines/:medicineId`
-- `POST /api/medicines/:medicineId/verify`
-- `POST /api/medicines/:medicineId/transfer`
-- `POST /api/medicines/:medicineId/recall`
-- `GET /api/medicines/:medicineId/verification-history`
-- `GET /api/medicines/:medicineId/custody-history`
+- `POST /api/medicines`, `GET /api/medicines`, `GET /api/medicines/:id`
+- `POST /api/medicines/:id/verify`, `/transfer`, `/recall`
+- `GET /api/medicines/:id/verification-history`, `/custody-history`
 
-Example registration request:
-
-```bash
-curl -X POST http://localhost:3000/api/medicines \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "medicineId": "MED-2026-0001",
-    "medicineName": "Amoxicillin 500mg",
-    "manufacturer": "Acme Pharma Ltd.",
-    "batchNumber": "AMX-26-091",
-    "expiryDate": "2028-01-01",
-    "manufacturingLocation": "Hyderabad, India",
-    "quantity": 10000,
-    "verificationCode": "QR-9F7K-2A1C"
-  }'
-```
-
-Example verification request:
-
-```bash
-curl -X POST http://localhost:3000/api/medicines/MED-2026-0001/verify \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "scannedCode": "QR-9F7K-2A1C",
-    "verifier": "Central Pharmacy",
-    "location": "Pune"
-  }'
-```
-
-A successful match returns `GENUINE`; an incorrect code or recalled record returns `COUNTERFEIT_OR_RECALLED` and is retained in the verification history.
+Write responses include `txHash` (viewable on https://sepolia.etherscan.io). If a built frontend exists in `../frontend/dist`, it is served from `/`.

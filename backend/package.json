@@ -1,16 +1,16 @@
 {
   "name": "medichain-backend",
-  "version": "1.0.0",
-  "description": "Express API for counterfeit drug detection using Hyperledger Fabric",
+  "version": "2.0.0",
+  "description": "Express API for counterfeit drug detection on Ethereum (Sepolia)",
   "main": "src/server.js",
   "scripts": { "start": "node src/server.js", "dev": "node --watch src/server.js" },
-  "keywords": ["hyperledger-fabric", "medicine", "counterfeit-detection", "express", "blockchain"],
+  "keywords": ["ethereum", "sepolia", "solidity", "medicine", "counterfeit-detection", "express", "blockchain"],
   "license": "ISC",
+  "engines": { "node": ">=18" },
   "dependencies": {
-    "@grpc/grpc-js": "^1.14.0",
-    "@hyperledger/fabric-gateway": "^1.10.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
     "express": "^4.21.0"
   }
 }
